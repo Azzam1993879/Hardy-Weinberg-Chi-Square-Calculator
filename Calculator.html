@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardy-Weinberg Chi-Square Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f4f4f9;
+            color: #333;
+            position: relative;
+        }
+        input, button {
+            font-size: 1.2em;
+            padding: 10px;
+            margin: 10px;
+            width: 100px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus {
+            border-color: #6A5ACD;
+            box-shadow: 0 0 10px rgba(106, 90, 205, 0.5);
+        }
+        button {
+            background-color: #6A5ACD;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            border-radius: 8px;
+        }
+        button:hover {
+            background-color: #836FFF;
+            transform: scale(1.05);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            font-weight: bold;
+        }
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            color: rgba(106, 90, 205, 0.5);
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        @keyframes backgroundAnimation {
+            0% { background-color: #f4f4f9; }
+            25% { background-color: #FFFAF0; }
+            50% { background-color: #F5F5DC; }
+            75% { background-color: #F0FFF0; }
+            100% { background-color: #f4f4f9; }
+        }
+        body {
+            animation: backgroundAnimation 10s infinite;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+</head>
+<body>
+    <div class="watermark">Created by Ahmed Azzam and Heba Khaled</div>
+
+    <h1>Hardy-Weinberg Chi-Square Calculator</h1>
+    <p>Enter genotype frequencies for the control group:</p>
+    <label for="AA">AA (Homozygous Wild-Type): </label>
+    <input type="number" id="AA" placeholder="Count of AA"><br>
+    <label for="Aa">Aa (Heterozygous): </label>
+    <input type="number" id="Aa" placeholder="Count of Aa"><br>
+    <label for="aa">aa (Homozygous Mutant): </label>
+    <input type="number" id="aa" placeholder="Count of aa"><br>
+    <button onclick="calculateChiSquare()">Calculate</button>
+    <div id="result" class="result"></div>
+
+    <div class="credits">
+        <h3>References</h3>
+        <p><strong>Hardy-Weinberg Equilibrium:</strong></p>
+        <p>Hardy, G. H. (1908). Mendelian proportions in a mixed population. <em>Science</em>, 28(706), 49-50. doi:10.1126/science.28.706.49</p>
+        <p>Weinberg, W. (1908). On the demonstration of heredity in man. <em>Verhandlungen der Naturforschenden Gesellschaft in Basel</em>, 19, 233-253.</p>
+    </div>
+
+    <script>
+        function calculateChiSquare() {
+            const AA = parseInt(document.getElementById('AA').value);
+            const Aa = parseInt(document.getElementById('Aa').value);
+            const aa = parseInt(document.getElementById('aa').value);
+
+            if (isNaN(AA) || isNaN(Aa) || isNaN(aa)) {
+                document.getElementById('result').innerText = "Please enter valid counts for all genotypes.";
+                return;
+            }
+
+            const total = AA + Aa + aa;
+            const p = ((2 * AA) + Aa) / (2 * total);
+            const q = 1 - p;
+
+            const expectedAA = Math.pow(p, 2) * total;
+            const expectedAa = 2 * p * q * total;
+            const expectedaa = Math.pow(q, 2) * total;
+
+            const chiSquare = Math.pow(AA - expectedAA, 2) / expectedAA +
+                              Math.pow(Aa - expectedAa, 2) / expectedAa +
+                              Math.pow(aa - expectedaa, 2) / expectedaa;
+
+            const pValueDf1 = 1 - jStat.chisquare.cdf(chiSquare, 1);
+
+            let hweMessage;
+            if (pValueDf1 > 0.05) {
+                hweMessage = `
+                    <strong>Failing to Reject HWE (p > 0.05):</strong><br>
+                    The observed genotype frequencies are consistent with the expected frequencies. This indicates that the control group is likely representative of the population and that random mating is occurring.
+                `;
+            } else {
+                hweMessage = `
+                    <strong>Rejecting HWE (p < 0.05):</strong><br>
+                    A significant deviation from HWE indicates that the observed genotype frequencies differ from what is expected. This could suggest:<br>
+                    - <strong>Population Stratification:</strong> Different subpopulations may be contributing to the sample, leading to non-random mating.<br>
+                    - <strong>Selection Pressure:</strong> There may be natural selection acting on the alleles, affecting their frequencies.<br>
+                    - <strong>Genotyping Errors:</strong> There could be mistakes in data collection or processing.
+                `;
+            }
+
+            document.getElementById('result').innerHTML = `
+                <strong>Observed Genotypes:</strong><br>
+                AA: ${AA}, Aa: ${Aa}, aa: ${aa}<br><br>
+                <strong>Expected Genotypes (H-W Equilibrium):</strong><br>
+                AA: ${expectedAA.toFixed(2)}, Aa: ${expectedAa.toFixed(2)}, aa: ${expectedaa.toFixed(2)}<br><br>
+                <strong>Chi-Square Value:</strong> ${chiSquare.toFixed(2)}<br>
+                <strong>P-Value (df=1):</strong> ${pValueDf1.toFixed(4)}<br><br>
+                ${hweMessage}
+            `;
+        }
+    </script>
+</body>
+</html>
